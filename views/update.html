@@ -33,19 +33,23 @@
             当前位置：文章管理>编辑文章
         </div>
         <div class="pannel">
-            <form name = logon >
+            <form name = logon method="post" enctype="multipart/form-data" action="/articleModify">
             <h3 class="review_title">编辑文章</h3>
             <div class="form_group">
                 <label>文章标题：</label>
-                <input type="text" class="input_txt2" name = "articleName" value="国足进球了">
+                <input type="text" class="input_txt2" name = "articleName" value="{{.artice.Title}}">
+                <input type="hidden" name = "articleId" value="{{.artice.Id}}">
+                <input type="hidden" name = "imageUrl" value="{{.artice.Image}}">
+                <input type="hidden" name = "articleName2" value="{{.artice.Title}}">
+                <input type="hidden" name = "content2" value="{{.artice.Content}}">
             </div>
             <div class="form_group">
                 <label>文章内容：</label>
-                <textarea class="input_multxt" name="content">国足进球了</textarea></textarea>
+                <textarea class="input_multxt" name="content">{{.artice.Content}}</textarea></textarea>
             </div>
             <div class="form_group">
                 <label>上传图片：</label>
-                <img src="">
+                <img src="{{.artice.Image}}">
                 <input type="file" name="uploadname" class="input_file">
             </div>
             <div class="form_group indent_group line_top">

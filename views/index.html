@@ -56,11 +56,11 @@
                 {{range .articles}}
                     <tr>
                         <td>{{.Title}}</td>
-                        <td><a href="#">查看详情</a></td>
-                        <td>{{.Time}}</td>
+                        <td><a href="/articleDetail?articleId={{.Id}}">查看详情</a></td>
+                        <td>{{.Time.Format "2006-01-02 15:04:05"}}</td>
                         <td>{{.Count}}</td>
-                        <td><a href="#" class="dels">删除</a></td>
-                        <td><a href="#">编辑</a></td>
+                        <td><a href="/articleDelete?articleId={{.Id}}" class="dels">删除</a></td>
+                        <td><a href="/articleModify?articleId={{.Id}}">编辑</a></td>
                         <td>财经新闻</td>
                     </tr>
                 {{end}}

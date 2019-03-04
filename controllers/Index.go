@@ -37,7 +37,7 @@ func (this *IndexController) ShowIndex() {
 	//All 获取所有数据，相当于 select * from Article
 	qs.Limit(10, 0).OrderBy("-Time").All(&articles)
 
-	beego.Info("-------------------->",articles)
+	//beego.Info("-------------------->", articles)
 	this.Data["articles"] = articles
 	this.TplName = "index.html"
 }
@@ -133,4 +133,149 @@ func (this *IndexController) GetAddType() {
 //添加分类
 func (this *IndexController) PostAddType() {
 	this.TplName = "addType.html"
+}
+
+//后台管理页面-文章列表-详情
+func (this *IndexController) ArticleDetail() {
+	//获取数据
+	id, err := this.GetInt("articleId")
+	if err != nil {
+		beego.Info("获取文章ID错误：", err)
+		this.Data["errmsg"] = "获取文章ID错误。"
+		this.Redirect("/index", 302)
+	}
+
+	//查询数据
+	o := orm.NewOrm()
+	artice := models.Article{}
+	artice.Id = id
+	o.Read(&artice)
+
+	//修改阅读量
+	artice.Count += 1
+	o.Update(&artice)
+
+	//返回视图
+	this.Data["artice"] = artice
+	this.TplName = "content.html"
+}
+
+//后台管理页面-文章列表-删除
+func (this *IndexController) ArticleDelete() {
+	//获取数据
+	id, err := this.GetInt("articleId")
+	if err != nil {
+		beego.Info("获取文章ID错误：", err)
+		this.Data["errmsg"] = "获取文章ID错误。"
+		this.Redirect("/index", 302)
+	}
+
+	o := orm.NewOrm()
+	artice := models.Article{}
+	artice.Id = id
+	o.Delete(&artice)
+	this.Redirect("/index", 302)
+}
+
+//后台管理页面-文章列表-编辑
+func (this *IndexController) GetArticleModify() {
+	//获取数据
+	id, err := this.GetInt("articleId")
+	if err != nil {
+		beego.Info("获取文章ID错误：", err)
+		this.Data["errmsg"] = "获取文章ID错误。"
+		this.Redirect("/index", 302)
+	}
+
+	//查询数据
+	o := orm.NewOrm()
+	artice := models.Article{}
+	artice.Id = id
+	o.Read(&artice)
+
+	//返回视图
+	this.Data["artice"] = artice
+	this.TplName = "update.html"
+}
+
+//后台管理页面-文章列表-编辑
+func (this *IndexController) PostArticleModify() {
+	id, err := this.GetInt("articleId")
+	if err != nil {
+		beego.Info("获取文章ID错误：", err)
+		this.Data["errmsg"] = "获取文章ID错误。"
+		this.Redirect("/index", 302)
+		return
+	}
+
+	title2 := this.GetString("articleName2")
+	content2 := this.GetString("content2")
+	image := this.GetString("imageUrl")
+	artice := models.Article{}
+	artice.Id = id
+	artice.Title = title2
+	artice.Content = content2
+	artice.Image = image
+
+	title := this.GetString("articleName")
+	content := this.GetString("content")
+	if title == "" || content == "" {
+		beego.Info("文章标题或内容不允许为空。")
+		this.Data["errmsg"] = "文章标题或内容不允许为空。"
+		this.Data["artice"] = artice
+		this.TplName = "update.html"
+		return
+	}
+
+	//上传图片
+	file, header, err := this.GetFile("uploadname")
+	defer file.Close()
+	if err != nil {
+		beego.Info("上传文件失败：", err)
+		this.Data["errmsg"] = "上传文件失败。"
+		this.Data["artice"] = artice
+		this.TplName = "update.html"
+		return
+	}
+	name := header.Filename //文件名
+	ext := path.Ext(name)   //获取文件后缀名
+	size := header.Size     //文件大小
+	if ext != ".jpg" && ext != ".png" && ext != ".jpeg" {
+		beego.Info("上传文件格式不正确。")
+		this.Data["errmsg"] = "上传文件格式不正确。"
+		this.Data["artice"] = artice
+		this.TplName = "update.html"
+		return
+	} else if size > 500000 {
+		beego.Info("上传文件大小超过限制。")
+		this.Data["errmsg"] = "上传文件大小超过限制。"
+		this.Data["artice"] = artice
+		this.TplName = "update.html"
+		return
+	}
+	//处理文件重名：时间 + 6位随机数 + 文件后缀名
+	//"2006-01-02 15:04:05" 这个时间格式是固定值
+	now := time.Now().Format("20060102150405")
+	name = now + "_" + strconv.Itoa(int(rand.Int31n(1000000))) + ext
+	beego.Info("长传文件名为：", name)
+	path := beego.AppConfig.String("fileUpload") + name
+	err = this.SaveToFile("uploadname", path)
+	if err != nil {
+		beego.Info("保存文件失败：", err)
+		this.Data["errmsg"] = "保存文件失败。"
+		this.Data["artice"] = artice
+		this.TplName = "update.html"
+		return
+	}
+
+	//保存文章数据
+	o := orm.NewOrm()
+	article := models.Article{}
+	article.Id = id
+	o.Read(&article)
+	article.Title = title
+	article.Content = content
+	article.Image = path
+	o.Update(&article)
+	this.Redirect("/index", 302)
 }
